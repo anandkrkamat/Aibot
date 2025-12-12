@@ -1,40 +1,61 @@
+require('dotenv').config();
 const { Telegraf } = require('telegraf');
+const fetch = require('node-fetch');
 
-const bot = new Telegraf(process.env.TELEGRAM_BOT_TOKEN);
+const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
+const OPENAI_KEY = process.env.OPENAI_KEY;
 
-bot.start((ctx) => ctx.reply('Bot is alive ✅'));
-bot.on('text', (ctx) => ctx.reply('Echo: ' + ctx.message.text));
+if (!BOT_TOKEN) {
+  throw new Error('TELEGRAM_BOT_TOKEN is missing');
+}
+if (!OPENAI_KEY) {
+  throw new Error('OPENAI_KEY is missing');
+}
 
-bot.launch().then(() => console.log('Bot launched'));
+const bot = new Telegraf(BOT_TOKEN);
 
-process.once('SIGINT', () => bot.stop());
-process.once('SIGTERM', () => bot.stop());          'Authorization': `Bearer ${AIMLAPI_KEY}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          model: "openai/gpt-5-2", // change if needed
-          messages: [{ role: "user", content: userText }],
-          max_tokens: 600
-        })
-      });
-      const data = await resp.json();
-      aiText = data.choices?.[0]?.message?.content ?? JSON.stringify(data);
-    } else {
-      if (!OPENAI_KEY) throw new Error('OPENAI_KEY not set');
-      const resp = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${OPENAI_KEY}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          model: "gpt-4o-mini", // change to the model you want
-          messages: [{ role: "user", content: userText }],
-          max_tokens: 600
-        })
-      });
-      const data = await resp.json();
-      aiText = data.choices?.[0]?.message?.content ?? JSON.stringify(data);
+bot.start((ctx) => ctx.reply('🤖 Bot is alive! Send a message.'));
+bot.help((ctx) => ctx.reply('Just type a message and I will reply using OpenAI.'));
+
+bot.on('text', async (ctx) => {
+  const userText = ctx.message.text;
+  await ctx.chat.action('typing');
+
+  try {
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${OPENAI_KEY}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o-mini',
+        messages: [{ role: 'user', content: userText }],
+        max_tokens: 500
+      })
+    });
+
+    const data = await response.json();
+
+    if (!data.choices) {
+      console.error('OpenAI error:', data);
+      return ctx.reply('❌ OpenAI API error');
+    }
+
+    const reply = data.choices[0].message.content;
+    await ctx.reply(reply);
+  } catch (err) {
+    console.error('Runtime error:', err);
+    await ctx.reply('❌ Error contacting OpenAI');
+  }
+});
+
+bot.launch().then(() => {
+  console.log('✅ Bot launched (OpenAI)');
+});
+
+process.once('SIGINT', () => bot.stop('SIGINT'));
+process.once('SIGTERM', () => bot.stop('SIGTERM'));      aiText = data.choices?.[0]?.message?.content ?? JSON.stringify(data);
     }
 
     // Trim long replies
