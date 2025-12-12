@@ -2,34 +2,46 @@ import 'dotenv/config';
 import { Telegraf } from 'telegraf';
 import OpenAI from 'openai';
 
+// Create Telegram bot
 const bot = new Telegraf(process.env.TELEGRAM_BOT_TOKEN);
+
+// Create OpenAI client
 const openai = new OpenAI({
-  apiKey: process.env.OPENAI_KEY
+  apiKey: process.env.OPENAI_KEY,
 });
 
+// /start command
 bot.start((ctx) => {
   ctx.reply('🤖 Bot is alive! Send any message.');
 });
 
+// Handle normal text
 bot.on('text', async (ctx) => {
-  try {
-    const userText = ctx.message.text;
-    console.log('TEXT:', userText);
+  const userText = ctx.message.text;
+  console.log('USER:', userText);
 
-    const response = await openai.chat.completions.create({
+  try {
+    const completion = await openai.chat.completions.create({
       model: 'gpt-4o-mini',
       messages: [
         { role: 'user', content: userText }
-      ]
+      ],
     });
 
-    await ctx.reply(response.choices[0].message.content);
+    const reply = completion.choices[0].message.content;
+    await ctx.reply(reply);
 
   } catch (error) {
-    console.error(error);
-    await ctx.reply('❌ Error contacting OpenAI');
+    console.error('OPENAI ERROR:', error);
+
+    // Send readable error back
+    await ctx.reply(
+      '❌ OpenAI error:\n' +
+      (error?.error?.message || error?.message || 'Unknown error')
+    );
   }
 });
 
+// Start bot
 bot.launch();
-console.log('Bot started with OpenAI');
+console.log('✅ Bot started');
