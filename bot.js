@@ -3,38 +3,16 @@ import { Telegraf } from 'telegraf';
 
 const bot = new Telegraf(process.env.TELEGRAM_BOT_TOKEN);
 
-bot.start((ctx) => ctx.reply('✅ Bot is alive'));
-bot.on('text', (ctx) => ctx.reply('ECHO: ' + ctx.message.text));
-
-bot.launch();
-console.log('Bot started');
-    if (!data.choices || !data.choices[0]) {
-      console.error('OpenAI error:', data);
-      return ctx.reply('❌ OpenAI returned an error');
-    }
-
-    await ctx.reply(data.choices[0].message.content);
-
-  } catch (err) {
-    console.error('Runtime error:', err);
-    await ctx.reply('❌ Error contacting OpenAI');
-  }
+bot.start((ctx) => {
+  ctx.reply('✅ Bot is alive');
 });
 
-// Launch bot
-bot.launch().then(() => console.log('✅ Bot launched successfully'));
+bot.on('text', (ctx) => {
+  ctx.reply('ECHO: ' + ctx.message.text);
+});
 
-// Graceful shutdown
-process.once('SIGINT', () => bot.stop('SIGINT'));
-process.once('SIGTERM', () => bot.stop('SIGTERM'));      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${OPENAI_KEY}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        messages: [
-          { role: 'user', content: userText }
+bot.launch();
+console.log('Bot started');          { role: 'user', content: userText }
         ],
         max_tokens: 500
       })
