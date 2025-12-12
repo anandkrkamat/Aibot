@@ -2,29 +2,17 @@ require('dotenv').config();
 const { Telegraf } = require('telegraf');
 const fetch = require('node-fetch');
 
-// Environment variables
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const OPENAI_KEY = process.env.OPENAI_KEY;
 
-if (!BOT_TOKEN) {
-  throw new Error('TELEGRAM_BOT_TOKEN is missing');
-}
+if (!BOT_TOKEN) throw new Error('TELEGRAM_BOT_TOKEN missing');
+if (!OPENAI_KEY) throw new Error('OPENAI_KEY missing');
 
-if (!OPENAI_KEY) {
-  throw new Error('OPENAI_KEY is missing');
-}
-
-// Create bot
 const bot = new Telegraf(BOT_TOKEN);
 
 // Commands
-bot.start((ctx) => {
-  ctx.reply('🤖 Bot is alive! Send a normal message.');
-});
-
-bot.help((ctx) => {
-  ctx.reply('Send any text and I will reply using OpenAI.');
-});
+bot.start((ctx) => ctx.reply('🤖 Bot is alive! Send a normal message.'));
+bot.help((ctx) => ctx.reply('Send any text and I will reply using OpenAI.'));
 
 // Text handler
 bot.on('text', async (ctx) => {
@@ -33,8 +21,45 @@ bot.on('text', async (ctx) => {
   await ctx.chat.action('typing');
 
   try {
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
+    const response = await fetch(
+      'https://api.openai.com/v1/chat/completions',
+      {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${OPENAI_KEY}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          model: 'gpt-4o-mini',
+          messages: [
+            { role: 'user', content: userText }
+          ],
+          max_tokens: 500
+        })
+      }
+    );
+
+    const data = await response.json();
+
+    if (!data.choices || !data.choices[0]) {
+      console.error('OpenAI error:', data);
+      return ctx.reply('❌ OpenAI returned an error');
+    }
+
+    await ctx.reply(data.choices[0].message.content);
+
+  } catch (err) {
+    console.error('Runtime error:', err);
+    await ctx.reply('❌ Error contacting OpenAI');
+  }
+});
+
+// Launch bot
+bot.launch().then(() => console.log('✅ Bot launched successfully'));
+
+// Graceful shutdown
+process.once('SIGINT', () => bot.stop('SIGINT'));
+process.once('SIGTERM', () => bot.stop('SIGTERM'));      method: 'POST',
       headers: {
         'Authorization': `Bearer ${OPENAI_KEY}`,
         'Content-Type': 'application/json'
