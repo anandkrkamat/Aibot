@@ -64,3 +64,8 @@ bot.launch().then(() => {
 // Graceful shutdown
 process.once('SIGINT', () => bot.stop('SIGINT'));
 process.once('SIGTERM', () => bot.stop('SIGTERM'));
+
+bot.on('text', async (ctx) => {
+  console.log('TEXT RECEIVED:', ctx.message.text); // 👈 ADD THIS LINE
+  const userText = ctx.message.text;
+  await ctx.chat.action('typing');
