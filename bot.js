@@ -1,40 +1,14 @@
-// bot.js — Telegraf long-polling Telegram -> OpenAI/AIMLAPI bridge
-require('dotenv').config();
 const { Telegraf } = require('telegraf');
-const fetch = require('node-fetch');
 
-const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
-if (!BOT_TOKEN) {
-  console.error('Missing TELEGRAM_BOT_TOKEN env var');
-  process.exit(1);
-}
+const bot = new Telegraf(process.env.TELEGRAM_BOT_TOKEN);
 
-// Choose provider: set USE_AIMLAPI=true and AIMLAPI_KEY in env to use AIMLAPI.
-// Otherwise it uses OpenAI with OPENAI_KEY env var.
-const USE_AIMLAPI = process.env.USE_AIMLAPI === 'true';
-const OPENAI_KEY = process.env.OPENAI_KEY;
-const AIMLAPI_KEY = process.env.AIMLAPI_KEY;
+bot.start((ctx) => ctx.reply('Bot is alive ✅'));
+bot.on('text', (ctx) => ctx.reply('Echo: ' + ctx.message.text));
 
-const bot = new Telegraf(BOT_TOKEN);
+bot.launch().then(() => console.log('Bot launched'));
 
-// Basic commands
-bot.start((ctx) => ctx.reply("Hello! Send any message to chat with the AI."));
-bot.help((ctx) => ctx.reply("Just type a message and I'll reply using the AI."));
-
-// Message handler
-bot.on('text', async (ctx) => {
-  const userText = ctx.message.text;
-  await ctx.chat.action('typing'); // show typing
-
-  try {
-    let aiText = 'Sorry — no response from AI.';
-
-    if (USE_AIMLAPI) {
-      // AIMLAPI: adapt payload to AIMLAPI docs if needed
-      const resp = await fetch('https://api.aimlapi.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${AIMLAPI_KEY}`,
+process.once('SIGINT', () => bot.stop());
+process.once('SIGTERM', () => bot.stop());          'Authorization': `Bearer ${AIMLAPI_KEY}`,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
