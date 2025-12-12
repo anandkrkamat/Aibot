@@ -1,40 +1,13 @@
 import 'dotenv/config';
 import { Telegraf } from 'telegraf';
-import OpenAI from 'openai';
 
 const bot = new Telegraf(process.env.TELEGRAM_BOT_TOKEN);
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_KEY
-});
 
-bot.start((ctx) => ctx.reply('🤖 Bot is alive. Send any message.'));
-bot.help((ctx) => ctx.reply('Just type something.'));
-
-bot.on('text', async (ctx) => {
-  try {
-    const userText = ctx.message.text;
-    console.log('TEXT:', userText);
-
-    const completion = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
-      messages: [{ role: 'user', content: userText }]
-    });
-
-    await ctx.reply(completion.choices[0].message.content);
-  } catch (err) {
-    console.error(err);
-    await ctx.reply('❌ Error talking to OpenAI');
-  }
-});
+bot.start((ctx) => ctx.reply('✅ Bot is alive'));
+bot.on('text', (ctx) => ctx.reply('ECHO: ' + ctx.message.text));
 
 bot.launch();
-console.log('✅ Bot started');          max_tokens: 500
-        })
-      }
-    );
-
-    const data = await response.json();
-
+console.log('Bot started');
     if (!data.choices || !data.choices[0]) {
       console.error('OpenAI error:', data);
       return ctx.reply('❌ OpenAI returned an error');
