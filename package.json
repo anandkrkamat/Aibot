@@ -1,5 +1,5 @@
 {
-  "name": "telegram-bot",
+  "name": "telegram-openai-bot",
   "version": "1.0.0",
   "type": "module",
   "scripts": {
@@ -7,6 +7,7 @@
   },
   "dependencies": {
     "telegraf": "^4.12.0",
+    "openai": "^4.0.0",
     "dotenv": "^16.0.0"
   }
 }
