@@ -2,6 +2,7 @@ require('dotenv').config();
 const { Telegraf } = require('telegraf');
 const fetch = require('node-fetch');
 
+// Environment variables
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const OPENAI_KEY = process.env.OPENAI_KEY;
 
@@ -13,15 +14,22 @@ if (!OPENAI_KEY) {
   throw new Error('OPENAI_KEY is missing');
 }
 
+// Create bot
 const bot = new Telegraf(BOT_TOKEN);
 
 // Commands
-bot.start((ctx) => ctx.reply('🤖 Bot is alive! Send a message.'));
-bot.help((ctx) => ctx.reply('Just type a message and I will reply using OpenAI.'));
+bot.start((ctx) => {
+  ctx.reply('🤖 Bot is alive! Send a normal message.');
+});
 
-// Message handler
+bot.help((ctx) => {
+  ctx.reply('Send any text and I will reply using OpenAI.');
+});
+
+// Text handler
 bot.on('text', async (ctx) => {
   const userText = ctx.message.text;
+  console.log('TEXT RECEIVED:', userText);
   await ctx.chat.action('typing');
 
   try {
@@ -35,6 +43,36 @@ bot.on('text', async (ctx) => {
         model: 'gpt-4o-mini',
         messages: [
           { role: 'user', content: userText }
+        ],
+        max_tokens: 500
+      })
+    });
+
+    const data = await response.json();
+
+    if (!data.choices || !data.choices[0]) {
+      console.error('OpenAI response error:', data);
+      await ctx.reply('❌ OpenAI returned an error');
+      return;
+    }
+
+    const reply = data.choices[0].message.content;
+    await ctx.reply(reply);
+
+  } catch (err) {
+    console.error('Runtime error:', err);
+    await ctx.reply('❌ Error contacting OpenAI');
+  }
+});
+
+// Launch bot
+bot.launch().then(() => {
+  console.log('✅ Bot launched successfully');
+});
+
+// Graceful shutdown
+process.once('SIGINT', () => bot.stop('SIGINT'));
+process.once('SIGTERM', () => bot.stop('SIGTERM'));          { role: 'user', content: userText }
         ],
         max_tokens: 500
       })
