@@ -1,40 +1,34 @@
-require('dotenv').config();
-const { Telegraf } = require('telegraf');
-const fetch = require('node-fetch');
+import 'dotenv/config';
+import { Telegraf } from 'telegraf';
+import OpenAI from 'openai';
 
-const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
-const OPENAI_KEY = process.env.OPENAI_KEY;
+const bot = new Telegraf(process.env.TELEGRAM_BOT_TOKEN);
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_KEY
+});
 
-if (!BOT_TOKEN) throw new Error('TELEGRAM_BOT_TOKEN missing');
-if (!OPENAI_KEY) throw new Error('OPENAI_KEY missing');
+bot.start((ctx) => ctx.reply('🤖 Bot is alive. Send any message.'));
+bot.help((ctx) => ctx.reply('Just type something.'));
 
-const bot = new Telegraf(BOT_TOKEN);
-
-// Commands
-bot.start((ctx) => ctx.reply('🤖 Bot is alive! Send a normal message.'));
-bot.help((ctx) => ctx.reply('Send any text and I will reply using OpenAI.'));
-
-// Text handler
 bot.on('text', async (ctx) => {
-  const userText = ctx.message.text;
-  console.log('TEXT RECEIVED:', userText);
-  await ctx.chat.action('typing');
-
   try {
-    const response = await fetch(
-      'https://api.openai.com/v1/chat/completions',
-      {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${OPENAI_KEY}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          model: 'gpt-4o-mini',
-          messages: [
-            { role: 'user', content: userText }
-          ],
-          max_tokens: 500
+    const userText = ctx.message.text;
+    console.log('TEXT:', userText);
+
+    const completion = await openai.chat.completions.create({
+      model: 'gpt-4o-mini',
+      messages: [{ role: 'user', content: userText }]
+    });
+
+    await ctx.reply(completion.choices[0].message.content);
+  } catch (err) {
+    console.error(err);
+    await ctx.reply('❌ Error talking to OpenAI');
+  }
+});
+
+bot.launch();
+console.log('✅ Bot started');          max_tokens: 500
         })
       }
     );
